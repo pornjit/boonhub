@@ -300,7 +300,9 @@ createApp({
 
     async function loadData(userId){
       try{
-        const res = await fetch(`${GAS_URL}?userId=${encodeURIComponent(userId)}`);
+        const res = await fetch(`${GAS_URL}?userId=${encodeURIComponent(userId)}&t=${Date.now()}`, {
+  cache: 'no-store'
+});
 
         if(!res.ok){
           throw new Error('HTTP ' + res.status);

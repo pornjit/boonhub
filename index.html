@@ -333,7 +333,7 @@ createApp({
         }
 
         const profile = await liff.getProfile();
-        greeting.value = '👋 สวัสดี ' + profile.displayName;
+       greeting.value = '👋 สวัสดี ' + profile.displayName + ' | userId: ' + profile.userId;
 
         // ส่ง userId ของคนที่กำลังเปิดอยู่ ไปกรองข้อมูลที่ GAS โดยตรง
         await loadData(profile.userId);

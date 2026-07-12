@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>บัตรอนุโมทนา — ตักบาตรหมื่นรูปโคราช (ทดสอบ)</title>
+<title>บัตรอนุโมทนา — ตักบาตรหมื่นรูปโคราช</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -38,7 +38,7 @@
 
   .page-head{
     max-width:720px;
-    margin:0 auto 24px;
+    margin:0 auto 32px;
     text-align:center;
   }
 
@@ -66,49 +66,10 @@
     margin:0;
   }
 
-  /* --- แผงทดสอบ (ลบออกได้เมื่อใช้งานจริงผ่าน LIFF) --- */
-  .test-panel{
-    max-width:520px;
-    margin:20px auto 32px;
-    background:#FFFDF8;
-    border:1px dashed var(--gold);
-    border-radius:14px;
-    padding:16px 18px;
-  }
-  .test-panel label{
-    display:block;
-    font-size:12px;
+  .greeting{
+    margin-top:10px;
     color:var(--ink-soft);
-    margin-bottom:6px;
-  }
-  .test-row{
-    display:flex;
-    gap:8px;
-  }
-  .test-row input{
-    flex:1;
-    padding:10px 12px;
-    border:1px solid #E0CFA0;
-    border-radius:10px;
-    font-family:'Sarabun', sans-serif;
-    font-size:14px;
-  }
-  .test-row button{
-    padding:10px 18px;
-    border:none;
-    border-radius:10px;
-    background:var(--saffron);
-    color:#fff;
-    font-family:'Sarabun', sans-serif;
-    font-weight:600;
-    font-size:14px;
-    cursor:pointer;
-  }
-  .test-row button:hover{ background:#B85A16; }
-  .test-hint{
-    margin-top:8px;
-    font-size:12px;
-    color:var(--ink-soft);
+    font-size:15px;
   }
 
   .grid{
@@ -252,7 +213,6 @@
   @media (max-width:420px){
     .grid{ grid-template-columns:1fr; }
     .page-title{ font-size:24px; }
-    .test-row{ flex-direction:column; }
   }
 </style>
 </head>
@@ -263,16 +223,7 @@
   <div class="page-head">
     <div class="eyebrow">อนุโมทนาบุญ</div>
     <h1 class="page-title">ตักบาตรหมื่นรูปโคราช</h1>
-  </div>
-
-  <!-- แผงทดสอบ: ใส่ userId เอง (หรือเว้นว่างถ้า GAS เวอร์ชันยังไม่กรอง) -->
-  <div class="test-panel">
-    <label>userId (เว้นว่างได้ถ้า GAS ยังไม่กรอง)</label>
-    <div class="test-row">
-      <input v-model="userIdInput" placeholder="เช่น Uxxxxxxxxxxxxxxxx" @keyup.enter="loadData">
-      <button @click="loadData">โหลดข้อมูล</button>
-    </div>
-    <div class="test-hint">GAS_URL: {{ GAS_URL }}</div>
+    <div class="greeting">{{ greeting }}</div>
   </div>
 
   <div v-if="loading" class="loading">กำลังโหลดข้อมูล...</div>
@@ -284,7 +235,7 @@
 
   <div v-else-if="rows.length === 0" class="empty">
     <span class="big">🪷</span>
-    ไม่พบบัตรอนุโมทนา
+    ไม่พบบัตรอนุโมทนาของคุณ
   </div>
 
   <div v-else class="grid">
@@ -320,19 +271,23 @@
 </div>
 
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
 const { createApp, ref, onMounted } = Vue;
 
+// ⚠️ เปลี่ยนเป็น URL ของ Google Apps Script web app ที่ deploy ไว้
+// (endpoint ต้องรับ ?userId=xxx แล้วตอบ JSON: { rows: [{donorName, assigned, receivedBow}] })
+const GAS_URL = "https://script.google.com/macros/s/AKfycbycILsIv2PLjo9j2CDBfLjelkvGaqee3r316x_9uyFG8h27Xu1cVOPnurACSWfb2y76gQ/exec";
+
+// ⚠️ เปลี่ยนเป็น LIFF ID ของคุณ
+const LIFF_ID = "2009694352-1XDn2HDx";
+
 createApp({
   setup(){
-
-    // ⚠️ เปลี่ยนเป็น URL ของ Google Apps Script web app ที่ deploy ไว้
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbycILsIv2PLjo9j2CDBfLjelkvGaqee3r316x_9uyFG8h27Xu1cVOPnurACSWfb2y76gQ/exec";
-
     const rows = ref([]);
-    const loading = ref(false);
+    const greeting = ref('👋 กำลังโหลดข้อมูล...');
+    const loading = ref(true);
     const errorMsg = ref('');
-    const userIdInput = ref('');
 
     function seatColor(assigned){
       const s = String(assigned || '');
@@ -343,17 +298,9 @@ createApp({
       return '#D9711F';
     }
 
-    async function loadData(){
-      loading.value = true;
-      errorMsg.value = '';
-      rows.value = [];
-
+    async function loadData(userId){
       try{
-        const url = userIdInput.value
-          ? `${GAS_URL}?userId=${encodeURIComponent(userIdInput.value)}`
-          : GAS_URL;
-
-        const res = await fetch(url);
+        const res = await fetch(`${GAS_URL}?userId=${encodeURIComponent(userId)}`);
 
         if(!res.ok){
           throw new Error('HTTP ' + res.status);
@@ -374,11 +321,28 @@ createApp({
       }
     }
 
-    onMounted(() => {
-      loadData(); // โหลดครั้งแรกทันที (ไม่ใส่ userId ถ้ายังไม่พิมพ์อะไร)
+    onMounted(async () => {
+      try{
+        await liff.init({ liffId: LIFF_ID });
+
+        if(!liff.isLoggedIn()){
+          liff.login();
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        greeting.value = '👋 สวัสดี ' + profile.displayName;
+
+        // ส่ง userId ของคนที่กำลังเปิดอยู่ ไปกรองข้อมูลที่ GAS โดยตรง
+        await loadData(profile.userId);
+
+      } catch(err){
+        loading.value = false;
+        errorMsg.value = 'เกิดข้อผิดพลาด: ' + err.message;
+      }
     });
 
-    return { rows, loading, errorMsg, userIdInput, loadData, seatColor, GAS_URL };
+    return { rows, greeting, loading, errorMsg, seatColor };
   }
 }).mount('#app');
 </script>

@@ -1,273 +1,219 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>บัตรอนุโมทนา — ตักบาตรหมื่นรูปโคราช</title>
+<title>หมายเลขกล่องตักบาตร</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-  :root{
-    --paper: #F3E9D2;
-    --card: #FFFDF8;
-    --ink: #3B2A1E;
-    --ink-soft: #7A6A57;
-    --saffron: #D9711F;
-    --gold: #B8860B;
-    --success: #35603F;
-    --success-bg: #E3EEE2;
-    --pending: #A56A2E;
-    --pending-bg: #F4E9D8;
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Prompt',sans-serif;
+}
+
+body{
+  min-height:100vh;
+  padding:20px;
+  background:linear-gradient(135deg,#f8fafc,#eef2ff);
+}
+
+.container{
+  max-width:850px;
+  margin:auto;
+}
+
+.group-card{
+  background:#fff;
+  border-radius:30px;
+  overflow:hidden;
+  box-shadow:0 20px 50px rgba(0,0,0,.08);
+}
+
+.header{
+  padding:32px 28px;
+  color:#fff;
+  background:
+  linear-gradient(
+    135deg,
+    #06c755 0%,
+    #22c55e 30%,
+    #14b8a6 65%,
+    #0ea5e9 100%
+  );
+}
+
+.header h1{
+  font-size:30px;
+  font-weight:700;
+  margin-bottom:6px;
+}
+
+.header p{
+  opacity:.95;
+  font-size:14px;
+}
+
+.member{
+  padding:18px 24px;
+  border-bottom:1px solid #f1f5f9;
+  transition:.2s;
+}
+
+.member:hover{
+  background:#fafafa;
+}
+
+.name-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.name{
+  font-size:17px;
+  font-weight:600;
+  color:#0f172a;
+}
+
+.seat{
+  padding:8px 18px;
+  border-radius:999px;
+  font-size:16px;
+  font-weight:700;
+  color:#fff;
+  min-width:85px;
+  text-align:center;
+  box-shadow:0 4px 12px rgba(0,0,0,.12);
+}
+
+.v{
+  background:#ec4899;
+}
+
+.l{
+  background:#8b5cf6;
+}
+
+.m{
+  background:#f97316;
+}
+
+.s{
+  background:#22c55e;
+}
+
+.default-seat{
+  background:#D9711F;
+}
+
+.lineid{
+  margin-top:4px;
+  color:#64748b;
+  font-size:13px;
+}
+
+.badges{
+  margin-top:8px;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  padding:5px 12px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+}
+
+.received{
+  background:#dcfce7;
+  color:#15803d;
+}
+
+.pending{
+  background:#fef3c7;
+  color:#b45309;
+}
+
+.state-msg{
+  max-width:520px;
+  margin:60px auto;
+  text-align:center;
+  color:#64748b;
+  font-size:15px;
+}
+.state-msg .big{
+  font-size:38px;
+  display:block;
+  margin-bottom:12px;
+}
+.state-msg.error-msg{
+  color:#8a3b1a;
+}
+
+@media(max-width:640px){
+
+  .member{
+    padding:16px;
   }
 
-  *{ box-sizing:border-box; }
-
-  body{
-    margin:0;
-    background:
-      radial-gradient(circle at 15% 10%, rgba(184,134,11,0.08), transparent 40%),
-      radial-gradient(circle at 85% 90%, rgba(217,113,31,0.07), transparent 45%),
-      var(--paper);
-    font-family:'Sarabun', sans-serif;
-    color:var(--ink);
-    min-height:100vh;
-    padding:32px 16px 60px;
+  .name{
+    font-size:16px;
   }
 
-  .page-head{
-    max-width:720px;
-    margin:0 auto 32px;
-    text-align:center;
-  }
-
-  .eyebrow{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    font-size:13px;
-    letter-spacing:2px;
-    color:var(--gold);
-    font-weight:600;
-    margin-bottom:10px;
-  }
-  .eyebrow::before, .eyebrow::after{
-    content:'';
-    width:24px;
-    height:1px;
-    background:var(--gold);
-  }
-
-  .page-title{
-    font-family:'Chonburi', cursive;
-    font-size:30px;
-    color:var(--ink);
-    margin:0;
-  }
-
-  .greeting{
-    margin-top:10px;
-    color:var(--ink-soft);
+  .seat{
     font-size:15px;
+    min-width:75px;
+    padding:7px 14px;
   }
 
-  .grid{
-    max-width:960px;
-    margin:0 auto;
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
-    gap:22px;
-  }
-
-  .ticket{
-    position:relative;
-    background:var(--card);
-    border-radius:18px;
-    box-shadow:
-      0 1px 0 rgba(184,134,11,0.4) inset,
-      0 14px 28px rgba(59,42,30,0.10);
-    border:1px solid #EADFC4;
-    overflow:hidden;
-    animation:rise .5s ease backwards;
-  }
-  .ticket:nth-child(1){ animation-delay:.02s; }
-  .ticket:nth-child(2){ animation-delay:.08s; }
-  .ticket:nth-child(3){ animation-delay:.14s; }
-  .ticket:nth-child(4){ animation-delay:.20s; }
-  .ticket:nth-child(5){ animation-delay:.26s; }
-
-  @keyframes rise{
-    from{ opacity:0; transform:translateY(10px); }
-    to{ opacity:1; transform:translateY(0); }
-  }
-
-  .ticket-top{
-    padding:22px 22px 18px;
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:12px;
-  }
-
-  .donor-name{
-    font-size:19px;
-    font-weight:700;
-    line-height:1.4;
-    color:var(--ink);
-  }
-
-  .donor-label{
-    font-size:12px;
-    color:var(--ink-soft);
-    letter-spacing:0.5px;
-    margin-bottom:4px;
-  }
-
-  .seal{
-    flex:0 0 auto;
-    width:52px;
-    height:52px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:20px;
-    border:2px solid;
-  }
-  .seal.received{
-    border-color:var(--success);
-    color:var(--success);
-    background:var(--success-bg);
-  }
-  .seal.waiting{
-    border-color:var(--pending);
-    color:var(--pending);
-    background:var(--pending-bg);
-  }
-
-  .perforation{
-    position:relative;
-    height:0;
-    border-top:2px dashed #E3D3A8;
-    margin:0 8px;
-  }
-  .perforation::before, .perforation::after{
-    content:'';
-    position:absolute;
-    top:-9px;
-    width:18px;
-    height:18px;
-    border-radius:50%;
-    background:var(--paper);
-    box-shadow:0 0 0 1px #EADFC4;
-  }
-  .perforation::before{ left:-9px; }
-  .perforation::after{ right:-9px; }
-
-  .ticket-bottom{
-    padding:18px 22px 22px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-  }
-
-  .seat-label{
-    font-size:12px;
-    color:var(--ink-soft);
-    letter-spacing:0.5px;
-    margin-bottom:2px;
-  }
-
-  .seat-number{
-    font-family:'Chonburi', cursive;
-    font-size:42px;
-    line-height:1;
-    color:var(--seat-color, var(--saffron));
-  }
-
-  .status-tag{
-    font-size:13px;
-    font-weight:600;
-    padding:6px 12px;
-    border-radius:999px;
-  }
-  .status-tag.received{ background:var(--success-bg); color:var(--success); }
-  .status-tag.waiting{ background:var(--pending-bg); color:var(--pending); }
-
-  .empty, .loading, .error{
-    max-width:520px;
-    margin:60px auto;
-    text-align:center;
-    color:var(--ink-soft);
-    font-size:15px;
-  }
-  .empty .big, .error .big{
-    font-size:38px;
-    display:block;
-    margin-bottom:12px;
-  }
-
-  .error{ color:#8a3b1a; }
-
-  @media (max-width:420px){
-    .grid{ grid-template-columns:1fr; }
-    .page-title{ font-size:24px; }
-  }
+}
 </style>
 </head>
+
 <body>
 
 <div id="app">
+  <div class="container">
+    <div class="group-card">
 
-  <div class="page-head">
-    <div class="eyebrow">อนุโมทนาบุญ</div>
-    <h1 class="page-title">ตักบาตรหมื่นรูปโคราช</h1>
-    <div class="greeting">{{ greeting }}</div>
-  </div>
-
-  <div v-if="loading" class="loading">กำลังโหลดข้อมูล...</div>
-
-  <div v-else-if="errorMsg" class="error">
-    <span class="big">⚠️</span>
-    {{ errorMsg }}
-  </div>
-
-  <div v-else-if="rows.length === 0" class="empty">
-    <span class="big">🪷</span>
-    ไม่พบบัตรอนุโมทนาของคุณ
-  </div>
-
-  <div v-else class="grid">
-    <div class="ticket" v-for="(r, i) in rows" :key="i">
-
-      <div class="ticket-top">
-        <div>
-          <div class="donor-label">เจ้าภาพ</div>
-          <div class="donor-name">{{ r.donorName }}</div>
-        </div>
-        <div class="seal" :class="r.receivedBow ? 'received' : 'waiting'">
-          {{ r.receivedBow ? '🎗️' : '⏳' }}
-        </div>
+      <div class="header">
+        <h1>🙏 ตักบาตรหมื่นรูปโคราช</h1>
+        <p>{{ greeting }}</p>
       </div>
 
-      <div class="perforation"></div>
+      <div v-if="loading" class="state-msg">กำลังโหลดข้อมูล...</div>
 
-      <div class="ticket-bottom">
-        <div>
-          <div class="seat-label">หมายเลขกล่อง</div>
-          <div class="seat-number" :style="{ '--seat-color': seatColor(r.assigned) }">
-            {{ r.assigned }}
-          </div>
+      <div v-else-if="errorMsg" class="state-msg error-msg">
+        <span class="big">⚠️</span>
+        {{ errorMsg }}
+      </div>
+
+      <div v-else-if="rows.length === 0" class="state-msg">
+        <span class="big">🪷</span>
+        ไม่พบบัตรอนุโมทนาของคุณ
+      </div>
+
+      <div v-else v-for="(r, i) in rows" :key="i" class="member">
+        <div class="name-row">
+          <div class="name">{{ r.donorName }}</div>
+          <div class="seat" :class="seatClass(r.assigned)">{{ r.assigned }}</div>
         </div>
-        <div class="status-tag" :class="r.receivedBow ? 'received' : 'waiting'">
-          {{ r.receivedBow ? 'รับโบว์แล้ว' : 'ยังไม่รับโบว์' }}
+
+        <div class="badges">
+          <span class="badge" :class="r.receivedBow ? 'received' : 'pending'">
+            {{ r.receivedBow ? '✅ รับโบว์แล้ว' : '⏳ ยังไม่รับโบว์' }}
+          </span>
         </div>
       </div>
 
     </div>
   </div>
-
 </div>
 
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
@@ -289,13 +235,13 @@ createApp({
     const loading = ref(true);
     const errorMsg = ref('');
 
-    function seatColor(assigned){
+    function seatClass(assigned){
       const s = String(assigned || '');
-      if(s.startsWith('V')) return '#8B5CF6';
-      if(s.startsWith('L')) return '#EC4899';
-      if(s.startsWith('M')) return '#F97316';
-      if(s.startsWith('S')) return '#3B82F6';
-      return '#D9711F';
+      if(s.startsWith('V')) return 'v';
+      if(s.startsWith('L')) return 'l';
+      if(s.startsWith('M')) return 'm';
+      if(s.startsWith('S')) return 's';
+      return 'default-seat';
     }
 
     async function loadData(userId){
@@ -344,7 +290,7 @@ createApp({
       }
     });
 
-    return { rows, greeting, loading, errorMsg, seatColor };
+    return { rows, greeting, loading, errorMsg, seatClass };
   }
 }).mount('#app');
 </script>

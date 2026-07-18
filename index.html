@@ -245,11 +245,6 @@ body{
   color:#fff;
 }
 
-.btn-share{
-  background:#06c755;
-  color:#fff;
-}
-
 .btn:disabled{
   opacity:.5;
   cursor:not-allowed;
@@ -317,7 +312,7 @@ body{
           </span>
         </div>
 
-        <div class="tap-hint">แตะเพื่อดูบัตร / ดาวน์โหลด / แชร์</div>
+        <div class="tap-hint">แตะเพื่อดูบัตรและดาวน์โหลด</div>
       </div>
 
     </div>
@@ -338,11 +333,10 @@ body{
 
       <div class="modal-actions" v-if="!ticketRendering">
         <button class="btn btn-download" @click="downloadTicket">⬇️ ดาวน์โหลด</button>
-        <button class="btn btn-share" @click="shareTicket">📤 แชร์ไป LINE</button>
       </div>
 
       <div class="share-note" v-if="!ticketRendering">
-        กดแชร์แล้วเลือกแชทที่ต้องการส่งใน LINE ได้เลย
+        ดาวน์โหลดรูปแล้วนำไปแชร์ต่อใน LINE หรือแอปอื่นๆ ได้เลย
       </div>
     </div>
   </div>
@@ -473,38 +467,57 @@ createApp({
       ticketOpen.value = false;
     }
 
-    function downloadTicket(){
-      if(!ticketDataUrl.value) return;
-      const a = document.createElement('a');
-      const name = (currentRow.value && currentRow.value.donorName) ? currentRow.value.donorName.replace(/\s+/g,'_') : 'ticket';
-      a.href = ticketDataUrl.value;
-      a.download = `ticket_${name}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+    // เปิดรูปแบบเต็มในแท็บ/หน้าต่างใหม่ ให้ผู้ใช้กดค้าง (มือถือ) หรือคลิกขวา (คอม)
+    // เพื่อ "บันทึกรูป" เอง วิธีนี้ใช้ได้แม้ในเว็บวิวของ LINE ที่บล็อกการดาวน์โหลดอัตโนมัติ
+    function openImageForSaving(dataUrl){
+      const win = window.open('', '_blank');
+      if(!win){
+        alert('เบราว์เซอร์บล็อกการเปิดหน้าต่างใหม่ กรุณาอนุญาต pop-up แล้วลองใหม่');
+        return false;
+      }
+      win.document.write(`
+        <!DOCTYPE html>
+        <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>บันทึกรูปบัตร</title>
+        <style>
+          body{margin:0;background:#111;display:flex;flex-direction:column;align-items:center;font-family:sans-serif;}
+          p{color:#fff;padding:14px 18px;text-align:center;font-size:14px;margin:0;}
+          img{width:100%;max-width:480px;display:block;}
+        </style></head>
+        <body>
+          <p>📌 กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ" เพื่อเซฟลงเครื่อง</p>
+          <img src="${dataUrl}" alt="บัตรตักบาตร">
+        </body></html>
+      `);
+      win.document.close();
+      return true;
     }
 
-    async function shareTicket(){
-      if(!ticketBlob.value) return;
-
-      const file = new File([ticketBlob.value], 'ticket.png', { type: 'image/png' });
-
-      // ใช้ Web Share API (รองรับใน LIFF/เบราว์เซอร์มือถือส่วนใหญ่) เพื่อเปิดหน้าต่างแชร์ แล้วเลือกแชทใน LINE ได้
-      if(navigator.canShare && navigator.canShare({ files: [file] })){
-        try{
-          await navigator.share({
-            files: [file],
-            title: 'บัตรตักบาตรหมื่นรูปโคราช',
-          });
-          return;
-        } catch(err){
-          // ผู้ใช้กดยกเลิก หรือแชร์ไม่สำเร็จ -> ไปใช้ fallback ด้านล่าง
-        }
+    function downloadTicket(){
+      if(!ticketBlob.value){
+        alert('ยังไม่มีรูปให้ดาวน์โหลด กรุณารอสักครู่');
+        return;
       }
 
-      // Fallback: ถ้าเบราว์เซอร์ไม่รองรับการแชร์ไฟล์ ให้ดาวน์โหลดรูปแล้วแนะนำให้แนบเข้า LINE เอง
-      downloadTicket();
-      alert('เบราว์เซอร์นี้แชร์รูปโดยตรงไป LINE ไม่ได้ ระบบได้ดาวน์โหลดรูปให้แล้ว กรุณาเปิด LINE แล้วแนบรูปจากคลังภาพเพื่อส่งได้เลยค่ะ');
+      const name = (currentRow.value && currentRow.value.donorName) ? currentRow.value.donorName.replace(/\s+/g,'_') : 'ticket';
+
+      // ลองใช้วิธีดาวน์โหลดปกติก่อน (ใช้ได้ดีในเบราว์เซอร์ปกติ เช่น Safari/Chrome ทั่วไป)
+      try{
+        const blobUrl = URL.createObjectURL(ticketBlob.value);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `ticket_${name}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+      } catch(err){
+        console.error(err);
+      }
+
+      // เผื่อกรณีเว็บวิวของ LINE บล็อกการดาวน์โหลดอัตโนมัติข้างต้น
+      // เปิดรูปในแท็บใหม่ให้กดค้างบันทึกเองเป็นทางสำรองเสมอ
+      openImageForSaving(ticketDataUrl.value);
     }
 
     async function loadData(userId){
@@ -558,7 +571,7 @@ createApp({
     return {
       rows, greeting, loading, errorMsg, seatClass,
       ticketOpen, ticketRendering, ticketDataUrl, ticketCanvas,
-      openTicket, closeTicket, downloadTicket, shareTicket
+      openTicket, closeTicket, downloadTicket
     };
   }
 }).mount('#app');

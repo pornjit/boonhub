@@ -61,10 +61,15 @@ body{
   padding:18px 24px;
   border-bottom:1px solid #f1f5f9;
   transition:.2s;
+  cursor:pointer;
 }
 
 .member:hover{
   background:#fafafa;
+}
+
+.member:active{
+  background:#f1f5f9;
 }
 
 .name-row{
@@ -140,6 +145,12 @@ body{
   color:#b45309;
 }
 
+.tap-hint{
+  margin-top:6px;
+  font-size:11px;
+  color:#94a3b8;
+}
+
 .state-msg{
   max-width:520px;
   margin:60px auto;
@@ -154,6 +165,101 @@ body{
 }
 .state-msg.error-msg{
   color:#8a3b1a;
+}
+
+/* ---------- Modal ---------- */
+.overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(15,23,42,.6);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index:1000;
+}
+
+.modal{
+  background:#fff;
+  border-radius:24px;
+  max-width:420px;
+  width:100%;
+  max-height:92vh;
+  overflow-y:auto;
+  padding:18px;
+  position:relative;
+}
+
+.modal-close{
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  background:#f1f5f9;
+  border:none;
+  font-size:18px;
+  color:#334155;
+  cursor:pointer;
+  z-index:2;
+}
+
+.ticket-preview{
+  width:100%;
+  border-radius:16px;
+  display:block;
+  background:#eee;
+  min-height:200px;
+}
+
+.ticket-loading{
+  text-align:center;
+  padding:60px 0;
+  color:#64748b;
+  font-size:14px;
+}
+
+.modal-actions{
+  display:flex;
+  gap:10px;
+  margin-top:16px;
+}
+
+.btn{
+  flex:1;
+  border:none;
+  border-radius:14px;
+  padding:13px 10px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+
+.btn-download{
+  background:#0f172a;
+  color:#fff;
+}
+
+.btn-share{
+  background:#06c755;
+  color:#fff;
+}
+
+.btn:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.share-note{
+  margin-top:10px;
+  font-size:12px;
+  color:#94a3b8;
+  text-align:center;
 }
 
 @media(max-width:640px){
@@ -199,7 +305,7 @@ body{
         ไม่พบบัตรอนุโมทนาของคุณ
       </div>
 
-      <div v-else v-for="(r, i) in rows" :key="i" class="member">
+      <div v-else v-for="(r, i) in rows" :key="i" class="member" @click="openTicket(r)">
         <div class="name-row">
           <div class="name">{{ r.donorName }}</div>
           <div class="seat" :class="seatClass(r.assigned)">{{ r.assigned }}</div>
@@ -210,16 +316,43 @@ body{
             {{ r.receivedBow ? '✅ รับโบว์แล้ว' : '⏳ ยังไม่รับโบว์' }}
           </span>
         </div>
+
+        <div class="tap-hint">แตะเพื่อดูบัตร / ดาวน์โหลด / แชร์</div>
       </div>
 
     </div>
   </div>
+
+  <!-- Ticket modal -->
+  <div v-if="ticketOpen" class="overlay" @click.self="closeTicket">
+    <div class="modal">
+      <button class="modal-close" @click="closeTicket">✕</button>
+
+      <div v-if="ticketRendering" class="ticket-loading">
+        กำลังสร้างบัตร...
+      </div>
+
+      <img v-show="!ticketRendering" :src="ticketDataUrl" class="ticket-preview" alt="บัตรตักบาตร">
+
+      <canvas ref="ticketCanvas" style="display:none"></canvas>
+
+      <div class="modal-actions" v-if="!ticketRendering">
+        <button class="btn btn-download" @click="downloadTicket">⬇️ ดาวน์โหลด</button>
+        <button class="btn btn-share" @click="shareTicket">📤 แชร์ไป LINE</button>
+      </div>
+
+      <div class="share-note" v-if="!ticketRendering">
+        กดแชร์แล้วเลือกแชทที่ต้องการส่งใน LINE ได้เลย
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-const { createApp, ref, onMounted } = Vue;
+const { createApp, ref, onMounted, nextTick } = Vue;
 
 // ⚠️ เปลี่ยนเป็น URL ของ Google Apps Script web app ที่ deploy ไว้
 // (endpoint ต้องรับ ?userId=xxx แล้วตอบ JSON: { rows: [{donorName, assigned, receivedBow}] })
@@ -228,12 +361,22 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbwwOYnFTNw-O-lgUhHVpxK0
 // ⚠️ เปลี่ยนเป็น LIFF ID ของคุณ
 const LIFF_ID = "2010679767-wyChm2c3";
 
+// รูปต้นแบบบัตร (Cloudinary)
+const TICKET_TEMPLATE_URL = "https://res.cloudinary.com/dl0qjw9c9/image/upload/v1784353313/ChatGPT_Image_14_%E0%B8%81.%E0%B8%84._2569_21_36_07_a1qssn.png";
+
 createApp({
   setup(){
     const rows = ref([]);
     const greeting = ref('👋 กำลังโหลดข้อมูล...');
     const loading = ref(true);
     const errorMsg = ref('');
+
+    const ticketOpen = ref(false);
+    const ticketRendering = ref(false);
+    const ticketDataUrl = ref('');
+    const ticketCanvas = ref(null);
+    const ticketBlob = ref(null);
+    const currentRow = ref(null);
 
     function seatClass(assigned){
       const s = String(assigned || '');
@@ -242,6 +385,126 @@ createApp({
       if(s.startsWith('M')) return 'm';
       if(s.startsWith('S')) return 's';
       return 'default-seat';
+    }
+
+    // วาดข้อความให้พอดีกรอบ โดยลดขนาดฟอนต์อัตโนมัติถ้ายาวเกิน
+    function fitText(ctx, text, maxWidth, baseSize, minSize, fontWeight, fontFamily){
+      let size = baseSize;
+      ctx.font = `${fontWeight} ${size}px ${fontFamily}`;
+      while(ctx.measureText(text).width > maxWidth && size > minSize){
+        size -= 2;
+        ctx.font = `${fontWeight} ${size}px ${fontFamily}`;
+      }
+      return size;
+    }
+
+    async function renderTicket(row){
+      ticketRendering.value = true;
+      ticketDataUrl.value = '';
+      ticketBlob.value = null;
+
+      await nextTick();
+
+      const canvas = ticketCanvas.value;
+      const ctx = canvas.getContext('2d');
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(new Error('โหลดรูปต้นแบบไม่สำเร็จ'));
+        img.src = TICKET_TEMPLATE_URL;
+      });
+
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // สเกลตำแหน่งตามขนาดจริงของรูป (ต้นแบบอ้างอิงที่ 1024x1536)
+      const sx = canvas.width / 1024;
+      const sy = canvas.height / 1536;
+
+      const donorName = row.donorName || '';
+      const seatNo = row.assigned || '';
+
+      // ---- ชื่อผู้เข้าร่วม ----
+      const nameMaxWidth = 680 * sx;
+      const nameSize = fitText(ctx, donorName, nameMaxWidth, 40 * sy, 22 * sy, 700, 'Prompt, sans-serif');
+      ctx.font = `700 ${nameSize}px Prompt, sans-serif`;
+      ctx.fillStyle = '#12102b';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.fillText(donorName, 250 * sx, 933 * sy);
+
+      // ---- เลขที่กล่อง/ที่นั่ง ----
+      const seatMaxWidth = 680 * sx;
+      const seatSize = fitText(ctx, seatNo, seatMaxWidth, 64 * sy, 30 * sy, 700, 'Prompt, sans-serif');
+      ctx.font = `700 ${seatSize}px Prompt, sans-serif`;
+      ctx.fillStyle = '#170f6e';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.fillText(seatNo, 250 * sx, 1120 * sy);
+
+      ticketDataUrl.value = canvas.toDataURL('image/png');
+
+      await new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          ticketBlob.value = blob;
+          resolve();
+        }, 'image/png');
+      });
+
+      ticketRendering.value = false;
+    }
+
+    async function openTicket(row){
+      currentRow.value = row;
+      ticketOpen.value = true;
+      try{
+        await renderTicket(row);
+      } catch(err){
+        ticketRendering.value = false;
+        alert('สร้างบัตรไม่สำเร็จ: ' + err.message);
+      }
+    }
+
+    function closeTicket(){
+      ticketOpen.value = false;
+    }
+
+    function downloadTicket(){
+      if(!ticketDataUrl.value) return;
+      const a = document.createElement('a');
+      const name = (currentRow.value && currentRow.value.donorName) ? currentRow.value.donorName.replace(/\s+/g,'_') : 'ticket';
+      a.href = ticketDataUrl.value;
+      a.download = `ticket_${name}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    async function shareTicket(){
+      if(!ticketBlob.value) return;
+
+      const file = new File([ticketBlob.value], 'ticket.png', { type: 'image/png' });
+
+      // ใช้ Web Share API (รองรับใน LIFF/เบราว์เซอร์มือถือส่วนใหญ่) เพื่อเปิดหน้าต่างแชร์ แล้วเลือกแชทใน LINE ได้
+      if(navigator.canShare && navigator.canShare({ files: [file] })){
+        try{
+          await navigator.share({
+            files: [file],
+            title: 'บัตรตักบาตรหมื่นรูปโคราช',
+          });
+          return;
+        } catch(err){
+          // ผู้ใช้กดยกเลิก หรือแชร์ไม่สำเร็จ -> ไปใช้ fallback ด้านล่าง
+        }
+      }
+
+      // Fallback: ถ้าเบราว์เซอร์ไม่รองรับการแชร์ไฟล์ ให้ดาวน์โหลดรูปแล้วแนะนำให้แนบเข้า LINE เอง
+      downloadTicket();
+      alert('เบราว์เซอร์นี้แชร์รูปโดยตรงไป LINE ไม่ได้ ระบบได้ดาวน์โหลดรูปให้แล้ว กรุณาเปิด LINE แล้วแนบรูปจากคลังภาพเพื่อส่งได้เลยค่ะ');
     }
 
     async function loadData(userId){
@@ -292,7 +555,11 @@ createApp({
       }
     });
 
-    return { rows, greeting, loading, errorMsg, seatClass };
+    return {
+      rows, greeting, loading, errorMsg, seatClass,
+      ticketOpen, ticketRendering, ticketDataUrl, ticketCanvas,
+      openTicket, closeTicket, downloadTicket, shareTicket
+    };
   }
 }).mount('#app');
 </script>

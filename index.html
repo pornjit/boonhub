@@ -297,7 +297,7 @@ body{
 
       <div v-else-if="rows.length === 0" class="state-msg">
         <span class="big">🪷</span>
-        ไม่พบบัตรอนุโมทนาของคุณ
+        ไม่พบข้อมูล
       </div>
 
       <div v-else v-for="(r, i) in rows" :key="i" class="member" @click="openTicket(r)">
@@ -335,9 +335,7 @@ body{
         <button class="btn btn-download" @click="downloadTicket">⬇️ ดาวน์โหลด</button>
       </div>
 
-      <div class="share-note" v-if="!ticketRendering">
-        ถ้ากดดาวน์โหลดแล้วไม่มีอะไรเกิดขึ้น ให้กดค้างที่รูปด้านบนแล้วเลือก "บันทึกรูปภาพ" แทน
-      </div>
+      
     </div>
   </div>
 
@@ -467,29 +465,20 @@ createApp({
       ticketOpen.value = false;
     }
 
-    function downloadTicket(){
-      if(!ticketBlob.value){
-        alert('ยังไม่มีรูปให้ดาวน์โหลด กรุณารอสักครู่');
+   function downloadTicket(){
+
+      if(!ticketDataUrl.value){
+        alert('ยังไม่มีรูป');
         return;
       }
-
-      const name = (currentRow.value && currentRow.value.donorName) ? currentRow.value.donorName.replace(/\s+/g,'_') : 'ticket';
-
-      // ลองดาวน์โหลดแบบปกติ (ใช้ได้ดีในเบราว์เซอร์ทั่วไป เช่น Safari/Chrome)
-      // ถ้าเว็บวิวของ LINE บล็อกวิธีนี้ ผู้ใช้ยังกดค้างที่รูปตัวอย่างด้านบนเพื่อบันทึกเองได้เสมอ
-      try{
-        const blobUrl = URL.createObjectURL(ticketBlob.value);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `ticket_${name}.png`;
-        a.rel = 'noopener';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-      } catch(err){
-        console.error('download error', err);
-      }
+    
+      openImageViewer(ticketDataUrl.value);
+    
+      setTimeout(() => {
+        alert(
+          '📱 กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ"'
+        );
+      }, 300);
     }
 
     async function loadData(userId){
@@ -547,7 +536,62 @@ createApp({
     };
   }
 }).mount('#app');
+
+function openImageViewer(src){
+
+  const viewer =
+    document.getElementById('imageViewer');
+
+  const img =
+    document.getElementById('viewerImage');
+
+  img.src = src;
+
+  viewer.style.display = 'flex';
+}
+
+function closeImageViewer(){
+
+  document.getElementById('imageViewer')
+    .style.display = 'none';
+}  
 </script>
+
+  <div id="imageViewer" style="
+display:none;
+position:fixed;
+inset:0;
+background:#000;
+z-index:99999;
+justify-content:center;
+align-items:center;
+">
+
+  <div style="
+    position:absolute;
+    top:12px;
+    right:12px;
+    color:#fff;
+    font-size:32px;
+    cursor:pointer;
+    z-index:2;
+  " onclick="closeImageViewer()">
+    ✕
+  </div>
+
+  <img
+    id="viewerImage"
+    src=""
+    style="
+      width:100%;
+      max-width:100vw;
+      max-height:100vh;
+      object-fit:contain;
+      user-select:none;
+      -webkit-user-select:none;
+    "
+  >
+</div>
 
 </body>
 </html>

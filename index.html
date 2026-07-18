@@ -327,7 +327,12 @@ body{
         กำลังสร้างบัตร...
       </div>
 
-      <img v-show="!ticketRendering" :src="ticketDataUrl" class="ticket-preview" alt="บัตรตักบาตร">
+      <img
+          v-show="!ticketRendering"
+          :src="ticketDataUrl"
+          class="ticket-preview"
+          alt="บัตรตักบาตร"
+          @click="downloadTicket">
 
       <canvas ref="ticketCanvas" style="display:none"></canvas>
 

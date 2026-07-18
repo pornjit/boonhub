@@ -336,7 +336,7 @@ body{
       </div>
 
       <div class="share-note" v-if="!ticketRendering">
-        ดาวน์โหลดรูปแล้วนำไปแชร์ต่อใน LINE หรือแอปอื่นๆ ได้เลย
+        ถ้ากดดาวน์โหลดแล้วไม่มีอะไรเกิดขึ้น ให้กดค้างที่รูปด้านบนแล้วเลือก "บันทึกรูปภาพ" แทน
       </div>
     </div>
   </div>
@@ -467,32 +467,6 @@ createApp({
       ticketOpen.value = false;
     }
 
-    // เปิดรูปแบบเต็มในแท็บ/หน้าต่างใหม่ ให้ผู้ใช้กดค้าง (มือถือ) หรือคลิกขวา (คอม)
-    // เพื่อ "บันทึกรูป" เอง วิธีนี้ใช้ได้แม้ในเว็บวิวของ LINE ที่บล็อกการดาวน์โหลดอัตโนมัติ
-    function openImageForSaving(dataUrl){
-      const win = window.open('', '_blank');
-      if(!win){
-        alert('เบราว์เซอร์บล็อกการเปิดหน้าต่างใหม่ กรุณาอนุญาต pop-up แล้วลองใหม่');
-        return false;
-      }
-      win.document.write(`
-        <!DOCTYPE html>
-        <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>บันทึกรูปบัตร</title>
-        <style>
-          body{margin:0;background:#111;display:flex;flex-direction:column;align-items:center;font-family:sans-serif;}
-          p{color:#fff;padding:14px 18px;text-align:center;font-size:14px;margin:0;}
-          img{width:100%;max-width:480px;display:block;}
-        </style></head>
-        <body>
-          <p>📌 กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ" เพื่อเซฟลงเครื่อง</p>
-          <img src="${dataUrl}" alt="บัตรตักบาตร">
-        </body></html>
-      `);
-      win.document.close();
-      return true;
-    }
-
     function downloadTicket(){
       if(!ticketBlob.value){
         alert('ยังไม่มีรูปให้ดาวน์โหลด กรุณารอสักครู่');
@@ -501,23 +475,21 @@ createApp({
 
       const name = (currentRow.value && currentRow.value.donorName) ? currentRow.value.donorName.replace(/\s+/g,'_') : 'ticket';
 
-      // ลองใช้วิธีดาวน์โหลดปกติก่อน (ใช้ได้ดีในเบราว์เซอร์ปกติ เช่น Safari/Chrome ทั่วไป)
+      // ลองดาวน์โหลดแบบปกติ (ใช้ได้ดีในเบราว์เซอร์ทั่วไป เช่น Safari/Chrome)
+      // ถ้าเว็บวิวของ LINE บล็อกวิธีนี้ ผู้ใช้ยังกดค้างที่รูปตัวอย่างด้านบนเพื่อบันทึกเองได้เสมอ
       try{
         const blobUrl = URL.createObjectURL(ticketBlob.value);
         const a = document.createElement('a');
         a.href = blobUrl;
         a.download = `ticket_${name}.png`;
+        a.rel = 'noopener';
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
       } catch(err){
-        console.error(err);
+        console.error('download error', err);
       }
-
-      // เผื่อกรณีเว็บวิวของ LINE บล็อกการดาวน์โหลดอัตโนมัติข้างต้น
-      // เปิดรูปในแท็บใหม่ให้กดค้างบันทึกเองเป็นทางสำรองเสมอ
-      openImageForSaving(ticketDataUrl.value);
     }
 
     async function loadData(userId){

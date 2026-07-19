@@ -340,7 +340,9 @@ body{
         <button class="btn btn-download" @click="downloadTicket">⬇️ ดาวน์โหลด</button>
       </div>
 
-      
+      <div class="share-note" v-if="!ticketRendering">
+        หรือแตะที่รูปด้านบนเพื่อดูเต็มจอ แล้วกดค้างเพื่อบันทึกก็ได้
+      </div>
     </div>
   </div>
 
@@ -360,6 +362,24 @@ const LIFF_ID = "2010679767-wyChm2c3";
 
 // รูปต้นแบบบัตร (Cloudinary)
 const TICKET_TEMPLATE_URL = "https://res.cloudinary.com/dl0qjw9c9/image/upload/v1784353313/ChatGPT_Image_14_%E0%B8%81.%E0%B8%84._2569_21_36_07_a1qssn.png";
+
+// แคชรูปต้นแบบไว้ในหน่วยความจำ โหลดครั้งเดียวพอ ไม่ต้องดึงจากเน็ตซ้ำทุกครั้งที่เปิดบัตร (ทำให้เร็วขึ้นมาก)
+let cachedTemplateImg = null;
+let cachedTemplatePromise = null;
+function loadTemplateImage(){
+  if(cachedTemplateImg) return Promise.resolve(cachedTemplateImg);
+  if(cachedTemplatePromise) return cachedTemplatePromise;
+
+  cachedTemplatePromise = new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { cachedTemplateImg = img; resolve(img); };
+    img.onerror = () => reject(new Error('โหลดรูปต้นแบบไม่สำเร็จ'));
+    img.src = TICKET_TEMPLATE_URL;
+  });
+
+  return cachedTemplatePromise;
+}
 
 createApp({
   setup(){
@@ -405,14 +425,7 @@ createApp({
       const canvas = ticketCanvas.value;
       const ctx = canvas.getContext('2d');
 
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = () => reject(new Error('โหลดรูปต้นแบบไม่สำเร็จ'));
-        img.src = TICKET_TEMPLATE_URL;
-      });
+      const img = await loadTemplateImage();
 
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
@@ -470,20 +483,32 @@ createApp({
       ticketOpen.value = false;
     }
 
-   function downloadTicket(){
-
-      if(!ticketDataUrl.value){
-        alert('ยังไม่มีรูป');
+    function downloadTicket(){
+      if(!ticketBlob.value){
+        alert('ยังไม่มีรูปให้ดาวน์โหลด กรุณารอสักครู่');
         return;
       }
-    
+
+      const name = (currentRow.value && currentRow.value.donorName) ? currentRow.value.donorName.replace(/\s+/g,'_') : 'ticket';
+
+      // ดาวน์โหลดตรงจาก Blob (เหมือนวิธีที่ใช้ในการ์ดรถวิ่ง) ไม่ต้องอัปโหลดขึ้นที่ไหนก่อน
+      try{
+        const blobUrl = URL.createObjectURL(ticketBlob.value);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `ticket_${name}.png`;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      } catch(err){
+        console.error('download error', err);
+      }
+
+      // เผื่อเบราว์เซอร์/เว็บวิวไหนไม่รองรับการดาวน์โหลดแบบ JS
+      // เปิดรูปเต็มจอให้กดค้างบันทึกเองเป็นทางสำรองเสมอ
       openImageViewer(ticketDataUrl.value);
-    
-      setTimeout(() => {
-        alert(
-          '📱 กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ"'
-        );
-      }, 300);
     }
 
     async function loadData(userId){
@@ -512,6 +537,9 @@ createApp({
     }
 
     onMounted(async () => {
+      // เริ่มโหลดรูปต้นแบบล่วงหน้าไว้เลย จะได้พร้อมใช้ทันทีที่ผู้ใช้กดเปิดบัตรครั้งแรก
+      loadTemplateImage().catch(() => {});
+
       try{
         await liff.init({ liffId: LIFF_ID });
 
@@ -559,7 +587,7 @@ function closeImageViewer(){
 
   document.getElementById('imageViewer')
     .style.display = 'none';
-}  
+}
 </script>
 
   <div id="imageViewer" style="
@@ -582,6 +610,19 @@ align-items:center;
     z-index:2;
   " onclick="closeImageViewer()">
     ✕
+  </div>
+
+  <div style="
+    position:absolute;
+    bottom:24px;
+    left:0;
+    right:0;
+    text-align:center;
+    color:#fff;
+    font-size:13px;
+    z-index:2;
+  ">
+    📌 กดค้างที่รูปแล้วเลือก "บันทึกรูปภาพ"
   </div>
 
   <img

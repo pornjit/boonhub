@@ -211,6 +211,7 @@ body{
   display:block;
   background:#eee;
   min-height:200px;
+  cursor:pointer;
 }
 
 .ticket-loading{
@@ -218,43 +219,6 @@ body{
   padding:60px 0;
   color:#64748b;
   font-size:14px;
-}
-
-.modal-actions{
-  display:flex;
-  gap:10px;
-  margin-top:16px;
-}
-
-.btn{
-  flex:1;
-  border:none;
-  border-radius:14px;
-  padding:13px 10px;
-  font-size:14px;
-  font-weight:600;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-}
-
-.btn-download{
-  background:#0f172a;
-  color:#fff;
-}
-
-.btn:disabled{
-  opacity:.5;
-  cursor:not-allowed;
-}
-
-.share-note{
-  margin-top:10px;
-  font-size:12px;
-  color:#94a3b8;
-  text-align:center;
 }
 
 @media(max-width:640px){
@@ -312,7 +276,7 @@ body{
           </span>
         </div>
 
-        <div class="tap-hint">แตะเพื่อดูบัตรและดาวน์โหลด</div>
+        <div class="tap-hint">แตะเพื่อดูบัตร</div>
       </div>
 
     </div>
@@ -332,17 +296,10 @@ body{
           :src="ticketDataUrl"
           class="ticket-preview"
           alt="บัตรตักบาตร"
-          @click="downloadTicket">
+          @click="viewFullscreen">
 
       <canvas ref="ticketCanvas" style="display:none"></canvas>
 
-      <div class="modal-actions" v-if="!ticketRendering">
-        <button class="btn btn-download" @click="downloadTicket">⬇️ ดาวน์โหลด</button>
-      </div>
-
-      <div class="share-note" v-if="!ticketRendering">
-        หรือแตะที่รูปด้านบนเพื่อดูเต็มจอ แล้วกดค้างเพื่อบันทึกก็ได้
-      </div>
     </div>
   </div>
 
@@ -392,7 +349,6 @@ createApp({
     const ticketRendering = ref(false);
     const ticketDataUrl = ref('');
     const ticketCanvas = ref(null);
-    const ticketBlob = ref(null);
     const currentRow = ref(null);
 
     function seatClass(assigned){
@@ -415,10 +371,22 @@ createApp({
       return size;
     }
 
+    // ตัดข้อความให้พอดี 1 บรรทัด ถ้ายาวเกินให้ตัดแล้วใส่ ... ต่อท้าย
+    function fitTextEllipsis(ctx, text, maxWidth, size, fontWeight, fontFamily){
+      ctx.font = `${fontWeight} ${size}px ${fontFamily}`;
+      if(ctx.measureText(text).width <= maxWidth){
+        return text;
+      }
+      let truncated = text;
+      while(truncated.length > 0 && ctx.measureText(truncated + '...').width > maxWidth){
+        truncated = truncated.slice(0, -1);
+      }
+      return truncated + '...';
+    }
+
     async function renderTicket(row){
       ticketRendering.value = true;
       ticketDataUrl.value = '';
-      ticketBlob.value = null;
 
       await nextTick();
 
@@ -438,32 +406,28 @@ createApp({
       const donorName = row.donorName || '';
       const seatNo = row.assigned || '';
 
-      // ---- ชื่อผู้เข้าร่วม ----
+      // ---- ชื่อผู้เข้าร่วม (ฟอนต์บาง อ่านง่าย ตัวใหญ่ขึ้น ตัดเป็น ... ถ้ายาวเกิน 1 บรรทัด) ----
       const nameMaxWidth = 680 * sx;
-      const nameSize = fitText(ctx, donorName, nameMaxWidth, 40 * sy, 22 * sy, 700, 'Prompt, sans-serif');
-      ctx.font = `700 ${nameSize}px Prompt, sans-serif`;
+      const nameSize = 50 * sy;
+      const nameWeight = 300;
+      const displayName = fitTextEllipsis(ctx, donorName, nameMaxWidth, nameSize, nameWeight, 'Prompt, sans-serif');
+      ctx.font = `${nameWeight} ${nameSize}px Prompt, sans-serif`;
       ctx.fillStyle = '#12102b';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
-      ctx.fillText(donorName, 250 * sx, 933 * sy);
+      ctx.fillText(displayName, 250 * sx, 933 * sy);
 
-      // ---- เลขที่กล่อง/ที่นั่ง ----
+      // ---- เลขที่กล่อง/ที่นั่ง (ฟอนต์บาง อ่านง่าย ตัวใหญ่ขึ้น) ----
       const seatMaxWidth = 680 * sx;
-      const seatSize = fitText(ctx, seatNo, seatMaxWidth, 64 * sy, 30 * sy, 700, 'Prompt, sans-serif');
-      ctx.font = `700 ${seatSize}px Prompt, sans-serif`;
+      const seatWeight = 400;
+      const seatSize = fitText(ctx, seatNo, seatMaxWidth, 84 * sy, 40 * sy, seatWeight, 'Prompt, sans-serif');
+      ctx.font = `${seatWeight} ${seatSize}px Prompt, sans-serif`;
       ctx.fillStyle = '#170f6e';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
       ctx.fillText(seatNo, 250 * sx, 1120 * sy);
 
       ticketDataUrl.value = canvas.toDataURL('image/png');
-
-      await new Promise((resolve) => {
-        canvas.toBlob((blob) => {
-          ticketBlob.value = blob;
-          resolve();
-        }, 'image/png');
-      });
 
       ticketRendering.value = false;
     }
@@ -483,31 +447,8 @@ createApp({
       ticketOpen.value = false;
     }
 
-    function downloadTicket(){
-      if(!ticketBlob.value){
-        alert('ยังไม่มีรูปให้ดาวน์โหลด กรุณารอสักครู่');
-        return;
-      }
-
-      const name = (currentRow.value && currentRow.value.donorName) ? currentRow.value.donorName.replace(/\s+/g,'_') : 'ticket';
-
-      // ดาวน์โหลดตรงจาก Blob (เหมือนวิธีที่ใช้ในการ์ดรถวิ่ง) ไม่ต้องอัปโหลดขึ้นที่ไหนก่อน
-      try{
-        const blobUrl = URL.createObjectURL(ticketBlob.value);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `ticket_${name}.png`;
-        a.rel = 'noopener';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-      } catch(err){
-        console.error('download error', err);
-      }
-
-      // เผื่อเบราว์เซอร์/เว็บวิวไหนไม่รองรับการดาวน์โหลดแบบ JS
-      // เปิดรูปเต็มจอให้กดค้างบันทึกเองเป็นทางสำรองเสมอ
+    function viewFullscreen(){
+      if(!ticketDataUrl.value) return;
       openImageViewer(ticketDataUrl.value);
     }
 
@@ -565,7 +506,7 @@ createApp({
     return {
       rows, greeting, loading, errorMsg, seatClass,
       ticketOpen, ticketRendering, ticketDataUrl, ticketCanvas,
-      openTicket, closeTicket, downloadTicket
+      openTicket, closeTicket, viewFullscreen
     };
   }
 }).mount('#app');

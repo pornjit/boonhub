@@ -499,8 +499,8 @@ createApp({
         //greeting.value = '👋 สวัสดีค่ะ ' + profile.displayName + ' | userId: ' + profile.userId;
 
         // ส่ง userId ของคนที่กำลังเปิดอยู่ ไปกรองข้อมูลที่ GAS โดยตรง
-        //await loadData(profile.userId); 
-       loadData(profile.userId);
+        await loadData(profile.userId); 
+       
 
       } catch(err){
         loading.value = false;

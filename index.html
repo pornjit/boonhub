@@ -482,7 +482,7 @@ createApp({
 
     onMounted(async () => {
       // เริ่มโหลดรูปต้นแบบล่วงหน้าไว้เลย จะได้พร้อมใช้ทันทีที่ผู้ใช้กดเปิดบัตรครั้งแรก
-    //  loadTemplateImage().catch(() => {});
+      loadTemplateImage().catch(() => {});
 
       try{
         await liff.init({ liffId: LIFF_ID });

@@ -269,8 +269,10 @@ body{
         <p>{{ greeting }}</p>
       </div>
 
-      <div v-if="loading" class="state-msg">กำลังโหลดข้อมูล...</div>
-
+      <div v-if="loading" class="state-msg">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">กำลังโหลดข้อมูล...</div>
+      </div>
       <div v-else-if="errorMsg" class="state-msg error-msg">
         <span class="big">⚠️</span>
         {{ errorMsg }}

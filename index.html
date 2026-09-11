@@ -536,7 +536,11 @@ createApp({
       loadTemplateImage().catch(() => {});
 
       try{
+        console.time('[BOX] LIFF INIT');
+
         await liff.init({ liffId: LIFF_ID });
+        
+        console.timeEnd('[BOX] LIFF INIT');
 
         if(!liff.isLoggedIn()){
           liff.login();

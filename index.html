@@ -449,29 +449,65 @@ createApp({
     }
 
     async function loadData(userId){
-      try{
-        const res = await fetch(`${GAS_URL}?userId=${encodeURIComponent(userId)}&t=${Date.now()}`, {
-          cache: 'no-store'
-        });
+  errorMsg.value = '';
+  loading.value = true;
 
-        if(!res.ok){
-          throw new Error('HTTP ' + res.status);
-        }
+  const url =
+    `${GAS_URL}?userId=${encodeURIComponent(userId)}&t=${Date.now()}`;
 
-        const data = await res.json();
+  let lastError = null;
 
-        if(data.error){
-          errorMsg.value = data.error;
-        } else {
-          rows.value = data.rows || [];
-        }
+  // ลองสูงสุด 2 ครั้ง
+  for(let attempt = 1; attempt <= 2; attempt++){
 
-      } catch(err){
-        errorMsg.value = 'ดึงข้อมูลไม่สำเร็จ: ' + err.message;
-      } finally {
-        loading.value = false;
+    try{
+
+      console.log('[BOX] loading attempt:', attempt);
+
+      const res = await fetch(url, {
+        method: 'GET',
+        cache: 'no-store'
+      });
+
+      console.log('[BOX] HTTP status:', res.status);
+
+      if(!res.ok){
+        throw new Error('HTTP ' + res.status);
+      }
+
+      const data = await res.json();
+
+      console.log('[BOX] GAS data:', data);
+
+      if(data.error){
+        throw new Error(data.error);
+      }
+
+      rows.value = data.rows || [];
+
+      // สำเร็จแล้ว
+      loading.value = false;
+      return;
+
+    }catch(err){
+
+      console.error('[BOX] attempt ' + attempt + ' failed:', err);
+
+      lastError = err;
+
+      // ถ้าครั้งแรกพลาด ให้รอ 1 วินาทีแล้วลองใหม่
+      if(attempt === 1){
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
+  }
+
+  // ล้มเหลวทั้ง 2 ครั้ง
+  loading.value = false;
+  errorMsg.value =
+    'ดึงข้อมูลไม่สำเร็จ: ' +
+    (lastError?.message || 'ไม่ทราบสาเหตุ');
+}
 
     onMounted(async () => {
       // เริ่มโหลดรูปต้นแบบล่วงหน้าไว้เลย จะได้พร้อมใช้ทันทีที่ผู้ใช้กดเปิดบัตรครั้งแรก

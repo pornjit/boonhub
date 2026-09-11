@@ -547,7 +547,9 @@ createApp({
           return;
         }
 
+        console.time('[BOX] GET PROFILE');
         const profile = await liff.getProfile();
+        console.timeEnd('[BOX] GET PROFILE');
        greeting.value = 'หมายเลขกล่อง คุณ' + profile.displayName ;
 
         //greeting.value = '👋 สวัสดีค่ะ ' + profile.displayName + ' | userId: ' + profile.userId;

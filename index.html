@@ -503,7 +503,14 @@ createApp({
       if(data.error){
         throw new Error(data.error);
       }
-
+     
+      // ✅ ใหม่: เช็คว่ายังไม่ถึงวันเปิดดูหรือยัง
+      if(data.opened === false){
+        notOpenYet.value = true;
+        loading.value = false;
+        return;
+      }
+      
       rows.value = data.rows || [];
 
       // สำเร็จแล้ว

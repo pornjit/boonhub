@@ -274,7 +274,11 @@ body{
         <span class="big">⚠️</span>
         {{ errorMsg }}
       </div>
-
+      <div v-else-if="notOpenYet" class="state-msg">
+        <span class="big">⏳</span>
+        รอเจ้าหน้าที่ดำเนินการจัดที่นั่งค่ะ<br>
+        กรุณาตรวจสอบอีกครั้งภายหลังนะคะ
+      </div>
       <div v-else-if="rows.length === 0" class="state-msg">
         <span class="big">🪷</span>
         ไม่พบข้อมูล

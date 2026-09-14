@@ -281,7 +281,7 @@ body{
       </div>
       <div v-else-if="rows.length === 0" class="state-msg">
         <span class="big">🪷</span>
-        ไม่พบข้อมูล
+        รอเจ้าหน้าที่ดำเนินการจัดที่นั่งค่ะ
       </div>
 
       <div v-else v-for="(r, i) in rows" :key="i" class="member" @click="openTicket(r)">

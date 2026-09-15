@@ -441,7 +441,8 @@ ctx.font = `${nameWeight} ${nameSize}px "Sarabun", "Noto Sans Thai", sans-serif`
       // ---- เลขที่กล่อง/ที่นั่ง (ฟอนต์บาง อ่านง่าย ตัวใหญ่ขึ้น) ----
       const seatMaxWidth = 680 * sx;
       const seatWeight = 400;
-      const seatSize = fitText(ctx, seatNo, seatMaxWidth, 84 * sy, 40 * sy, seatWeight, 'Prompt, sans-serif');
+      const seatSize = fitText(ctx, seatNo, seatMaxWidth, 84 * sy, 40 * sy, seatWeight, '"Sarabun", "Noto Sans Thai", sans-serif');
+ctx.font = `${seatWeight} ${seatSize}px "Sarabun", "Noto Sans Thai", sans-serif`;
       ctx.font = `${seatWeight} ${seatSize}px Prompt, sans-serif`;
       ctx.fillStyle = '#170f6e';
       ctx.textBaseline = 'middle';

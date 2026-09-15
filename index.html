@@ -459,9 +459,8 @@ createApp({
       const nameMaxWidth = 680 * sx;
       const nameSize = 50 * sy;
       const nameWeight = 300;
-     const displayName = fitTextEllipsis(ctx, donorName, nameMaxWidth, nameSize, nameWeight, '"Sarabun", "Noto Sans Thai", sans-serif');
-ctx.font = `${nameWeight} ${nameSize}px "Sarabun", "Noto Sans Thai", sans-serif`;
-      ctx.font = `${nameWeight} ${nameSize}px Prompt, sans-serif`;
+      const displayName = fitTextEllipsis(ctx, donorName, nameMaxWidth, nameSize, nameWeight, '"Sarabun", "Noto Sans Thai", sans-serif');
+      ctx.font = `${nameWeight} ${nameSize}px "Sarabun", "Noto Sans Thai", sans-serif`;
       ctx.fillStyle = '#12102b';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';

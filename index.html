@@ -651,6 +651,8 @@ createApp({
       } catch(err){
         loading.value = false;
         errorMsg.value = 'เกิดข้อผิดพลาด: ' + err.message;
+        document.getElementById('app').style.display = 'block';
+        document.getElementById('startup-splash').style.display = 'none';
       }
     });
 

@@ -734,6 +734,49 @@ align-items:center;
     "
   >
 </div>
+<script>
+function showStartupError(message){
+  const splash = document.getElementById('startup-splash');
+  if(!splash) return;
 
+  splash.innerHTML = `
+    <div style="font-size:42px;margin-bottom:16px">⚠️</div>
+    <div style="font-size:20px;font-weight:600;color:#334155;text-align:center;padding:0 20px">
+      ${message}
+    </div>
+  `;
+}
+
+requestAnimationFrame(() => {
+  setTimeout(() => {
+
+    const vueScript = document.createElement('script');
+    vueScript.src = 'https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js';
+
+    vueScript.onload = () => {
+
+      const liffScript = document.createElement('script');
+      liffScript.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js';
+
+      liffScript.onload = () => {
+        startApp();
+      };
+
+      liffScript.onerror = () => {
+        showStartupError('ไม่สามารถโหลดระบบ LINE ได้');
+      };
+
+      document.body.appendChild(liffScript);
+    };
+
+    vueScript.onerror = () => {
+      showStartupError('ไม่สามารถโหลดหน้าเว็บได้');
+    };
+
+    document.body.appendChild(vueScript);
+
+  }, 50);
+});
+</script>
 </body>
 </html>

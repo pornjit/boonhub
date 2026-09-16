@@ -647,8 +647,8 @@ createApp({
         await loadData(profile.userId);
 
         console.timeEnd('[BOX] GAS LOAD');
-        document.getElementById('pre-loading').style.display = 'none';
-
+        document.getElementById('app').style.display = 'block';
+       document.getElementById('startup-splash').style.display = 'none';
       } catch(err){
         loading.value = false;
         errorMsg.value = 'เกิดข้อผิดพลาด: ' + err.message;

@@ -578,8 +578,7 @@ createApp({
       }
 
       const data = await res.json();
-
-      console.log('[BOX] GAS data:', data);
+   console.log('[BOX] GAS data:', data);
 
       if(data.error){
         throw new Error(data.error);
